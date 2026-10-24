@@ -30,7 +30,7 @@ The artifact download may be a wrapper ZIP containing `onegodian-games.zip`. Use
 1. Confirm staging WordPress >=6.3 and PHP >=8.2, current plugin baseline, compatibility and full backup.
 2. Install ZIP in WordPress staging, activate and check admin area. No activation errors or unexpected settings changes.
 3. Create a test page with `[onegodian_games]`, another with `[onegodian_games_catalog]`, and one using `[onegodian_game game="rise-of-civilization"]`.
-4. Confirm all three districts: run, jump, double-jump, moving platforms, eight collectible coins/level, hazard deaths, three lives, checkpoint respawn, level selection and goal-flag completion.
+4. Confirm all three districts: run, jump, double-jump, moving platforms, eight collectible coins/level, hazard deaths, three lives, checkpoint respawn, level selection and goal-flag completion. Check P/Esc Pause → Resume, the elapsed timer and distance progress, and medal summaries. Verify the title renders exactly **ONEGODIA: Rise of Civilization — 2D Platformer** in the catalog, shortcode heading and game metadata.
 5. Confirm `onegodian-3d-exploration` is visible as **Planned** and cannot be launched using the game shortcode.
 6. Check keyboard and touch interaction on 1440×900 desktop and a real narrow-screen iPhone/Android device. Verify accessibility labels, focus, non-WebGL fallback for future games, console errors, CSP, no WordPress session leakage and cache behavior.
 7. Record passing screenshots, exact source commit, ZIP checksum, WordPress/PHP versions, browser/device results and rollback path.
@@ -41,4 +41,4 @@ Only after staging acceptance, a human-approved release candidate may be install
 
 ## Rollback
 
-Disable the plugin and restore the previous ZIP and original pages if the deployment regresses. The v0.1.0 candidate makes no database migrations and stores no user progress. If the site did not previously have this plugin, rollback is removal of the new pages/shortcodes and plugin files. Keep the previous backup and deployment evidence.
+Disable the plugin and restore the previous ZIP and original pages if the deployment regresses. The v0.2.0 candidate makes no database migrations and stores no user progress. If the site did not previously have this plugin, rollback is removal of the new pages/shortcodes and plugin files. Keep the previous backup and deployment evidence.
