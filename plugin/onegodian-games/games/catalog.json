@@ -5,7 +5,7 @@
   "games": [
     {
       "id": "rise-of-civilization",
-      "title": "OneGodian: Rise of Civilization",
+      "title": "ONEGODIA: Rise of Civilization — 2D Platformer",
       "type": "2d",
       "category": "platformer",
       "status": "playable",
@@ -21,9 +21,18 @@
         "checkpoints",
         "goal-flags",
         "level-select",
-        "touch-controls"
+        "touch-controls",
+        "pause-resume",
+        "elapsed-timer",
+        "distance-progress",
+        "session-medals",
+        "particle-feedback",
+        "civilization-skyline"
       ],
-      "score_type": "non-monetary-local-game-score"
+      "score_type": "non-monetary-local-game-score",
+      "version": "0.2.0",
+      "description": "An upgraded OneGodian 2D platformer across Awakening, Sky Gardens and Citadel. Explore, collect energy coins, double-jump, activate checkpoints and reach the civilization goal flags.",
+      "release_status": "source-playable; WordPress staging unverified"
     },
     {
       "id": "onegodian-3d-exploration",
