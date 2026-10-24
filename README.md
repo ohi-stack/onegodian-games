@@ -19,8 +19,9 @@ The game is bundled with a self-contained **OneGodian Games WordPress plugin** t
 - An isolated iframe player (`sandbox="allow-scripts"`), a bundled local runtime, catalog validation and explicit playable-status checks.
 - PHP/Node smoke tests and a CI pipeline generating a WordPress-installable ZIP review artifact.
 
-**Canonical game ID:** `rise-of-civilization` (unchanged, preserving existing shortcode compatibility). 
-\n## 2D and 3D platform architecture
+**Canonical game ID:** `rise-of-civilization` (unchanged, preserving existing shortcode compatibility).
+
+## 2D and 3D platform architecture
 
 | Domain | Responsibility | Status |
 |---|---|---|
