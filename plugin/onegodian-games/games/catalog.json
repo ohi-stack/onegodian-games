@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "authority": "ohi-stack/onegodian-games",
+  "description": "Packaged browser games. Only playable entries with a local HTML asset are launchable.",
+  "games": [
+    {
+      "id": "rise-of-civilization",
+      "title": "OneGodian: Rise of Civilization",
+      "type": "2d",
+      "category": "platformer",
+      "status": "playable",
+      "entry": "games/rise-of-civilization/index.html",
+      "levels": 3,
+      "features": [
+        "run",
+        "jump",
+        "double-jump",
+        "moving-platforms",
+        "coins",
+        "hazards",
+        "checkpoints",
+        "goal-flags",
+        "level-select",
+        "touch-controls"
+      ],
+      "score_type": "non-monetary-local-game-score"
+    },
+    {
+      "id": "onegodian-3d-exploration",
+      "title": "OneGodian 3D Exploration",
+      "type": "3d",
+      "category": "exploration",
+      "status": "planned",
+      "entry": null,
+      "description": "Future WebGL browser game; no executable game or player persistence is included."
+    }
+  ]
+}
