@@ -164,9 +164,10 @@
     if (startImmediately) {
       playing = true; mode = 'playing'; el('overlay').hidden = true;
     } else {
-      showOverlay('District ' + (index + 1) + ': ' + level.name,
-        'Collect the gold coins, avoid red hazards, activate the checkpoint, and reach the flag.',
-        'Play District', 'start');
+      showOverlay(GAME_TITLE,
+        'District ' + (index + 1) + ' · ' + level.name +
+        ' — Collect gold energy coins, jump through the skyline, activate the checkpoint and reach the goal flag.',
+        'Start District', 'start');
     }
   }
   function movingPlatforms(now, before) {
