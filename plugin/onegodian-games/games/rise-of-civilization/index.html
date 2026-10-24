@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090e1d">
+  <title>OneGodian: Rise of Civilization — 2D Platformer</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #090e1d; color: #f9e4b7; }
+    .game { width: 100%; max-width: 1100px; margin: auto; overflow: hidden; }
+    .hud { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 12px; background: #0b1225; }
+    .brand { font-weight: 800; letter-spacing: .11em; margin-right: auto; }
+    .status { font-size: .9rem; color: #f8d17e; font-variant-numeric: tabular-nums; }
+    button, select { border: 1px solid #b9954c; border-radius: 9px; background: #17223a; color: #ffe3a3; font: inherit; padding: 9px 12px; cursor: pointer; touch-action: none; }
+    button:hover, button:focus-visible, select:focus-visible { outline: 2px solid #73e2ff; outline-offset: 2px; }
+    button:active { background: #30466b; }
+    .scene { position: relative; width: 100%; }
+    canvas { display: block; width: 100%; height: auto; background: #14213c; }
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: #050914e8; padding: 20px; text-align: center; }
+    .overlay[hidden] { display: none; }
+    .overlay h1 { font-size: clamp(1.4rem, 5vw, 2rem); margin: 0; color: #f9d17e; }
+    .overlay p { max-width: 400px; line-height: 1.5; margin: 0 0 6px; color: #d3dbea; }
+    .overlay button { background: #dfb86b; color: #111827; font-weight: 800; min-width: 160px; }
+    .controls { display: flex; justify-content: space-between; align-items: center; padding: 12px; gap: 12px; }
+    .control-group { display: flex; gap: 10px; }
+    .control { min-width: 74px; min-height: 55px; font-size: 1.15rem; font-weight: 700; user-select: none; -webkit-user-select: none; }
+    .help { font-size: .78rem; color: #b3bfd4; padding: 0 12px 14px; margin: 0; }
+    @media (max-width: 520px) { .hud { gap: 7px; padding: 9px; } .brand { flex-basis: 100%; } .control { min-width: 64px; } .help { line-height: 1.45; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+<main class="game" id="onegodian-game">
+  <header class="hud">
+    <span class="brand">✦ ONEGODIAN GAMES</span>
+    <span id="status" class="status" aria-live="polite">Coins 0/8 · Lives 3</span>
+    <label for="level" class="sr-only">District</label>
+    <select id="level" aria-label="Select district">
+      <option value="0">1 · Awakening</option>
+      <option value="1">2 · Sky Gardens</option>
+      <option value="2">3 · Citadel</option>
+    </select>
+    <button type="button" id="restart">Restart</button>
+  </header>
+  <div class="scene">
+    <canvas id="stage" width="900" height="480" role="img" aria-label="Side-scrolling OneGodian platform game. Collect gold energy coins, avoid red spikes, activate a blue checkpoint, and reach the gold flag."></canvas>
+    <div id="overlay" class="overlay" role="status">
+      <h1 id="heading">Rise of Civilization</h1>
+      <p id="message">Collect energy coins, activate the checkpoint, and reach the goal flag.</p>
+      <button type="button" id="start">Start Game</button>
+    </div>
+  </div>
+  <div class="controls" aria-label="Touch game controls">
+    <div class="control-group">
+      <button type="button" class="control" data-key="left" aria-label="Move left">◀</button>
+      <button type="button" class="control" data-key="right" aria-label="Move right">▶</button>
+    </div>
+    <button type="button" class="control" data-key="jump" aria-label="Jump or double jump">↑ Jump</button>
+  </div>
+  <p class="help">Move: ← → or A/D · Jump: ↑, W or Space (press again to double-jump) · R: restart. Touch controls work on phones.</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const GAME_ID = 'rise-of-civilization';
+  const root = document.getElementById('onegodian-game');
+  const el = id => root.querySelector('#' + id);
+  const canvas = el('stage');
+  const ctx = canvas.getContext('2d');
+  const WIDTH = 900, HEIGHT = 480, FLOOR = 423;
+  const LEVELS = [
+    { name: 'Awakening', width: 2100,
+      platforms: [[0,423,420],[520,423,410],[1040,423,420],[1580,423,520],[240,330,140],[620,320,130],[870,255,130],[1190,327,130],[1410,265,130],[1740,320,140]],
+      moving: [[450,355,110,70],[950,340,95,70]],
+      hazards: [[700,389,55],[1260,389,65],[1850,389,65]],
+      coins: [[160,386],[280,292],[660,280],[910,218],[1200,289],[1450,228],[1760,283],[1960,385]],
+      checkpoint: 1120, goal: 2010 },
+    { name: 'Sky Gardens', width: 2400,
+      platforms: [[0,423,370],[480,423,420],[1020,423,370],[1520,423,440],[2070,423,330],[190,322,140],[560,298,130],[800,235,120],[1120,320,130],[1360,255,130],[1680,320,130],[1950,250,140],[2190,315,120]],
+      moving: [[400,345,100,75],[930,345,100,75],[1430,345,100,75]],
+      hazards: [[600,389,60],[1200,389,70],[1800,389,70]],
+      coins: [[220,280],[600,260],[830,200],[1170,285],[1400,220],[1700,285],[2000,215],[2230,275]],
+      checkpoint: 1220, goal: 2300 },
+    { name: 'Citadel', width: 2650,
+      platforms: [[0,423,430],[540,423,410],[1070,423,450],[1640,423,430],[2200,423,450],[220,315,140],[610,305,130],[880,240,130],[1200,320,140],[1490,250,130],[1790,305,140],[2070,235,140],[2350,320,130]],
+      moving: [[450,355,105,80],[980,350,105,80],[1540,350,105,80],[2120,350,105,80]],
+      hazards: [[740,389,60],[1280,389,75],[1900,389,75],[2440,389,70]],
+      coins: [[260,280],[650,270],[910,205],[1240,285],[1530,215],[1840,270],[2110,200],[2390,285]],
+      checkpoint: 1690, goal: 2550 }
+  ];
+  const keys = { left: false, right: false, jump: false };
+  const keyMap = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump' };
+  let levelIndex = 0, level, player, camera = 0, time = 0, lastTime = 0;
+  let coins = new Set(), lives = 3, checkpointActive = false, invulnerable = 0;
+  let jumpBuffer = 0, coyote = 0, playing = false, mode = 'start';
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+  function updateStatus() {
+    el('status').textContent = 'Coins ' + coins.size + '/' + level.coins.length +
+      ' · Lives ' + lives + (checkpointActive ? ' · ✓ Checkpoint' : '');
+  }
+  function showOverlay(heading, message, button, nextMode) {
+    playing = false;
+    mode = nextMode;
+    el('heading').textContent = heading;
+    el('message').textContent = message;
+    el('start').textContent = button;
+    el('overlay').hidden = false;
+  }
+  function loadLevel(index, startImmediately = false) {
+    levelIndex = index;
+    level = LEVELS[index];
+    player = { x: 50, y: FLOOR - 34, w: 25, h: 34, vx: 0, vy: 0, jumps: 0, grounded: false, spawn: 50 };
+    camera = 0; time = 0; lives = 3; coins = new Set(); checkpointActive = false;
+    invulnerable = 0; jumpBuffer = 0; coyote = 0;
+    keys.left = keys.right = keys.jump = false;
+    el('level').value = String(index);
+    updateStatus();
+    if (startImmediately) {
+      playing = true; mode = 'playing'; el('overlay').hidden = true;
+    } else {
+      showOverlay('District ' + (index + 1) + ': ' + level.name,
+        'Collect the gold coins, avoid red hazards, activate the checkpoint, and reach the flag.',
+        'Play District', 'start');
+    }
+  }
+  function movingPlatforms(now, before) {
+    return level.moving.map((a, i) => {
+      const x = a[0] + Math.sin(now * 1.6 + i) * a[3];
+      const oldX = a[0] + Math.sin(before * 1.6 + i) * a[3];
+      return { x, y: a[1], w: a[2], dx: x - oldX, moving: true };
+    });
+  }
+  function platforms(now, before) {
+    return level.platforms.map(a => ({ x: a[0], y: a[1], w: a[2], dx: 0, moving: false }))
+      .concat(movingPlatforms(now, before));
+  }
+  function loseLife() {
+    lives -= 1;
+    updateStatus();
+    if (lives <= 0) {
+      showOverlay('Game Over', 'You collected ' + coins.size + ' energy coins. Restart this district to try again.', 'Try Again', 'dead');
+      return;
+    }
+    player.x = player.spawn;
+    player.y = FLOOR - player.h;
+    player.vx = 0; player.vy = 0; player.jumps = 0; player.grounded = false;
+    jumpBuffer = 0; coyote = 0; invulnerable = 1.25;
+    camera = clamp(player.x - 260, 0, level.width - WIDTH);
+  }
+  function requestJump() {
+    jumpBuffer = 0.14;
+  }
+  function update(dt) {
+    const previousTime = time;
+    time += dt;
+    invulnerable = Math.max(0, invulnerable - dt);
+    jumpBuffer = Math.max(0, jumpBuffer - dt);
+    const direction = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    player.vx += (direction * 310 - player.vx) * Math.min(1, dt * (player.grounded ? 22 : 13));
+    player.x = clamp(player.x + player.vx * dt, 0, level.width - player.w);
+    const previousBottom = player.y + player.h;
+    player.vy = Math.min(1000, player.vy + 1600 * dt);
+    player.y += player.vy * dt;
+    let landed = false;
+    for (const p of platforms(time, previousTime)) {
+      if (player.vy >= 0 && previousBottom <= p.y + 12 && player.y + player.h >= p.y &&
+          player.x + player.w > p.x + 4 && player.x < p.x + p.w - 4) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.jumps = 0;
+        player.x = clamp(player.x + p.dx, 0, level.width - player.w);
+        landed = true;
+        break;
+      }
+    }
+    player.grounded = landed;
+    coyote = landed ? 0.1 : Math.max(0, coyote - dt);
+    if (jumpBuffer > 0 && (landed || coyote > 0 || player.jumps < 2)) {
+      const first = landed || coyote > 0;
+      player.vy = first ? -590 : -545;
+      player.jumps = first ? 1 : 2;
+      player.grounded = false; coyote = 0; jumpBuffer = 0;
+    }
+    if (player.y > HEIGHT + 100) { loseLife(); return; }
+    if (invulnerable <= 0) {
+      for (const h of level.hazards) {
+        if (overlap(player, { x: h[0], y: h[1], w: h[2], h: 34 })) {
+          loseLife(); return;
+        }
+      }
+    }
+    level.coins.forEach((coin, i) => {
+      if (!coins.has(i) && Math.hypot(player.x + 12 - coin[0], player.y + 15 - coin[1]) < 25) {
+        coins.add(i);
+        updateStatus();
+      }
+    });
+    if (!checkpointActive && player.x + player.w > level.checkpoint &&
+        player.x < level.checkpoint + 35 && player.y + player.h >= FLOOR - 8) {
+      checkpointActive = true;
+      player.spawn = level.checkpoint + 20;
+      updateStatus();
+    }
+    if (player.x + player.w >= level.goal && player.y + player.h > FLOOR - 95) {
+      showOverlay('District Complete!', 'You collected ' + coins.size + '/' + level.coins.length + ' coins.',
+        levelIndex === LEVELS.length - 1 ? 'Play Again' : 'Next District', 'won');
+    }
+    camera += (clamp(player.x - 290, 0, level.width - WIDTH) - camera) * Math.min(1, dt * 7);
+  }
+  function drawBackground() {
+    const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    gradient.addColorStop(0, '#0b1a39'); gradient.addColorStop(0.62, '#29436c'); gradient.addColorStop(1, '#6c4251');
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillStyle = '#f5b76e'; ctx.beginPath(); ctx.arc(750, 105, 43, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.translate(-camera * 0.2, 0);
+    for (let i = 0; i < 32; i++) {
+      const x = i * 105, height = 65 + (i * 41) % 125;
+      ctx.fillStyle = i % 2 ? '#122844' : '#18334d';
+      ctx.fillRect(x, FLOOR - height, 78, height);
+      ctx.fillStyle = '#f9d78d66';
+      for (let a = 0; a < 3; a++) for (let b = 0; b < 5; b++) {
+        if ((a + b + i) % 3 !== 0) ctx.fillRect(x + 12 + a * 21, FLOOR - height + 14 + b * 22, 7, 9);
+      }
+    }
+    ctx.restore();
+  }
+  function draw() {
+    drawBackground();
+    ctx.save(); ctx.translate(-camera, 0);
+    for (const p of platforms(time, time)) {
+      ctx.fillStyle = p.moving ? '#387b91' : '#314761';
+      ctx.fillRect(p.x, p.y, p.w, 18);
+      ctx.fillStyle = p.moving ? '#68e6f5' : '#d8b16a';
+      ctx.fillRect(p.x, p.y, p.w, 5);
+    }
+    for (const h of level.hazards) {
+      ctx.fillStyle = '#ff5c75';
+      for (let x = 0; x < h[2]; x += 18) {
+        ctx.beginPath(); ctx.moveTo(h[0] + x, h[1] + 34);
+        ctx.lineTo(h[0] + x + 9, h[1]); ctx.lineTo(h[0] + x + 18, h[1] + 34); ctx.fill();
+      }
+    }
+    level.coins.forEach((coin, i) => {
+      if (coins.has(i)) return;
+      ctx.save(); ctx.translate(coin[0], coin[1]); ctx.rotate(time * 2);
+      ctx.fillStyle = '#ffe28b'; ctx.shadowColor = '#ffdb65'; ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.moveTo(0, -11); ctx.lineTo(10, 0); ctx.lineTo(0, 11); ctx.lineTo(-10, 0); ctx.fill();
+      ctx.restore();
+    });
+    ctx.fillStyle = '#66d5ed'; ctx.fillRect(level.checkpoint, FLOOR - 85, 4, 85);
+    ctx.fillStyle = checkpointActive ? '#69ffe5' : '#67b6ff';
+    ctx.beginPath(); ctx.moveTo(level.checkpoint + 4, FLOOR - 85);
+    ctx.lineTo(level.checkpoint + 42, FLOOR - 71); ctx.lineTo(level.checkpoint + 4, FLOOR - 55); ctx.fill();
+    ctx.fillStyle = '#ffe09c'; ctx.fillRect(level.goal, FLOOR - 90, 5, 90);
+    ctx.fillStyle = '#f8c76b'; ctx.beginPath(); ctx.moveTo(level.goal + 5, FLOOR - 90);
+    ctx.lineTo(level.goal + 60, FLOOR - 70); ctx.lineTo(level.goal + 5, FLOOR - 50); ctx.fill();
+    if (invulnerable <= 0 || Math.floor(time * 10) % 2 === 0) {
+      ctx.fillStyle = '#eac58e'; ctx.fillRect(player.x + 5, player.y, 15, 13);
+      ctx.fillStyle = '#d4a44e'; ctx.fillRect(player.x + 3, player.y + 13, 19, 16);
+      ctx.fillStyle = '#53b3d0'; ctx.fillRect(player.x + 3, player.y + 29, 8, 5);
+      ctx.fillRect(player.x + 15, player.y + 29, 8, 5);
+      ctx.fillStyle = '#1b2839'; ctx.fillRect(player.x + (player.vx >= 0 ? 15 : 7), player.y + 5, 3, 3);
+    }
+    ctx.restore();
+    ctx.fillStyle = '#f6e2b5'; ctx.font = '14px system-ui'; ctx.fillText(level.name.toUpperCase(), 16, 25);
+  }
+  function setKey(action, down) {
+    if (action === 'jump') {
+      if (down && !keys.jump) requestJump();
+      keys.jump = down;
+    } else keys[action] = down;
+  }
+  window.addEventListener('keydown', event => {
+    const action = keyMap[event.code];
+    if (action) { event.preventDefault(); if (playing) setKey(action, true); }
+    if (event.code === 'KeyR') { event.preventDefault(); loadLevel(levelIndex, true); }
+  });
+  window.addEventListener('keyup', event => {
+    const action = keyMap[event.code];
+    if (action) { event.preventDefault(); setKey(action, false); }
+  });
+  function releaseControls() {
+    keys.left = false; keys.right = false; keys.jump = false; jumpBuffer = 0;
+  }
+  window.addEventListener('blur', releaseControls);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseControls(); });
+  root.querySelectorAll('[data-key]').forEach(button => {
+    const action = button.dataset.key;
+    button.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      if (!playing) return;
+      button.setPointerCapture(event.pointerId);
+      setKey(action, true);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type =>
+      button.addEventListener(type, () => setKey(action, false)));
+  });
+  el('restart').addEventListener('click', () => loadLevel(levelIndex, true));
+  el('level').addEventListener('change', event => loadLevel(Number(event.target.value)));
+  el('start').addEventListener('click', () => {
+    if (mode === 'won') { loadLevel(levelIndex === LEVELS.length - 1 ? 0 : levelIndex + 1, true); return; }
+    if (mode === 'dead') { loadLevel(levelIndex, true); return; }
+    playing = true; mode = 'playing'; el('overlay').hidden = true;
+  });
+  function frame(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000 || 0, 0.032);
+    lastTime = timestamp;
+    if (playing) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  loadLevel(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
