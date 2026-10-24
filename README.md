@@ -4,11 +4,11 @@
 
 **Canonical repository:** [ohi-stack/onegodian-games](https://github.com/ohi-stack/onegodian-games)  
 **Organization:** ONEGODIAN, LLC  
-**Project status:** 2D WordPress plugin candidate; 3D modular-game support is a defined architecture and **not yet a playable implementation**.
+**Project status:** 2D WordPress plugin v0.2.0 candidate; 3D modular-game support is a defined architecture and **not yet a playable implementation**.
 
 ## What is implemented
 
-The first bundled game is **OneGodian: Rise of Civilization**, a 2D side-scrolling platformer with three districts: Awakening, Sky Gardens, and Citadel. Players can run, jump, double-jump, ride moving platforms, collect coins, avoid hazards, activate checkpoints, lose lives, and reach goal flags. The game supports desktop keyboard controls, touchscreen controls, and restart/level selection.
+The first bundled game is **ONEGODIA: Rise of Civilization — 2D Platformer**, a 2D side-scrolling platformer with three districts: Awakening, Sky Gardens, and Citadel. Players can run, jump, double-jump, ride moving platforms, collect coins, avoid hazards, activate checkpoints, lose lives, and reach goal flags. The v0.2.0 upgrade adds P/Esc pause/resume, a run timer, a route-progress display, session-only district medals, animated collectible feedback, and a OneGodian human-civilization skyline. The game supports desktop keyboard controls, touchscreen controls, and restart/level selection.
 
 The game is bundled with a self-contained **OneGodian Games WordPress plugin** that provides:
 
@@ -19,7 +19,8 @@ The game is bundled with a self-contained **OneGodian Games WordPress plugin** t
 - An isolated iframe player (`sandbox="allow-scripts"`), a bundled local runtime, catalog validation and explicit playable-status checks.
 - PHP/Node smoke tests and a CI pipeline generating a WordPress-installable ZIP review artifact.
 
-## 2D and 3D platform architecture
+**Canonical game ID:** `rise-of-civilization` (unchanged, preserving existing shortcode compatibility). 
+\n## 2D and 3D platform architecture
 
 | Domain | Responsibility | Status |
 |---|---|---|
