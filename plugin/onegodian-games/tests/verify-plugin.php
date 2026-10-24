@@ -62,6 +62,17 @@ check(str_contains($html, '<iframe'), 'shortcode renders iframe');
 check(str_contains($html, 'sandbox="allow-scripts"'), 'iframe is sandboxed');
 check(!str_contains($html, 'allow-same-origin'), 'iframe does not inherit WordPress origin');
 check(str_contains($html, 'games/rise-of-civilization/index.html'), 'game asset path is correct');
+check(str_contains($html, 'data-onegodian-game-type="2d"'), 'manifest drives 2D game type');
+check(str_contains($html, 'OneGodian: Rise of Civilization'), 'title derives from manifest');
+check(str_contains($render(['game' => 'onegodian-3d-exploration']), 'not available'), 'planned 3D game cannot execute');
+check(str_contains($render(['game' => '../unsafe']), 'not available'), 'path traversal cannot select a game');
+check(!str_contains($html, 'allow-top-navigation'), 'iframe cannot navigate parent window');
+$catalogHtml = $GLOBALS['shortcodes']['onegodian_games_catalog']([]);
+check(str_contains($catalogHtml, 'OneGodian Games Catalog'), 'public catalog shortcode registered');
+check(str_contains($catalogHtml, 'OneGodian 3D Exploration'), 'public catalog includes 3D roadmap item');
+check(str_contains($catalogHtml, 'Planned — not playable'), '3D game is accurately classified');
+check(substr_count($catalogHtml, '<iframe') === 1, 'only the playable 2D game is launchable');
+
 check(str_contains($render(['game' => 'missing']), 'not available'), 'unknown games fail closed');
 check(!str_contains($render(['title' => '<script>alert(1)</script>']), '<script>'), 'title cannot inject HTML');
 
