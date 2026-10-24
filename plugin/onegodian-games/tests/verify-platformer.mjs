@@ -62,6 +62,7 @@ assert.notEqual(instrumented, match[1], 'test hook must attach to the actual gam
 vm.runInNewContext(instrumented, sandbox, { timeout: 1000 });
 const game = sandbox.__test;
 assert.ok(game, 'game initializes');
+assert.equal(element('heading').textContent, 'ONEGODIA: Rise of Civilization — 2D Platformer', 'start overlay uses renamed title');
 
 game.loadLevel(0, true);
 game.update(0.016);
