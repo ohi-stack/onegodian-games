@@ -1,4 +1,4 @@
-# OneGodian Games WordPress Plugin — v0.1.0 Candidate
+# OneGodian Games WordPress Plugin — v0.2.0 Candidate
 
 A bundled **2D and 3D browser-game integration layer** for WordPress, maintained in the canonical repository `ohi-stack/onegodian-games`.
 
@@ -19,16 +19,16 @@ The versioned manifest is `games/catalog.json`, the plugin-local canonical sourc
 
 | ID | Type | Status | Game |
 |---|---|---|---|
-| `rise-of-civilization` | 2D | Playable (source; staging unverified) | Three-district platformer |
+| `rise-of-civilization` | 2D | Playable (source; staging unverified) | ONEGODIA: Rise of Civilization — 2D Platformer |
 | `onegodian-3d-exploration` | 3D | Planned | No executable 3D game is distributed |
 
 **Safety gate:** `[onegodian_game]` only launches items with `status: "playable"`, a `type` of `2d` or `3d`, an allowed relative `games/<id>/index.html` path, and a real bundled HTML file. Arbitrary URLs and unimplemented 3D titles cannot load.
 
 ## Input
 
-Arrow Left/Right or A/D = run; Up, W or Space = jump/double-jump; R = restart. Touch buttons are available below the canvas. The goal flag ends the current district.
+Arrow Left/Right or A/D = run; Up, W or Space = jump/double-jump; P or Esc = pause/resume; R = restart. Touch buttons are available below the canvas. The goal flag ends the current district.
 
-Gold coins represent **local game score only**, never wallet balances, ODC or any exchangeable asset. Sessions are ephemeral; no leaderboard, API calls or player account data is collected.
+Gold coins represent **local game score only**, never wallet balances, ODC or any exchangeable asset. Session completion medals, elapsed time and distance progress are local-only. Sessions are ephemeral; no leaderboard, API calls or player account data is collected.
 
 ## Isolation and compatibility
 
