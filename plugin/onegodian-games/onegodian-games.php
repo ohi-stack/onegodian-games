@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: OneGodian Games
- * Description: OneGodian 2D and 3D browser-game catalog and isolated WordPress player.
- * Version: 0.1.0
+ * Description: OneGodian 2D and 3D browser-game catalog, including the ONEGODIA 2D platformer.
+ * Version: 0.2.0
  * Requires at least: 6.3
  * Requires PHP: 8.2
  * Author: ONEGODIAN, LLC
@@ -113,7 +113,7 @@ final class OneGodian_Games {
             'style="display:block;width:100%;height:650px;border:1px solid #b9954c;border-radius:14px;background:#090e1d" ' .
             'allowfullscreen></iframe>' .
             '<p style="font-size:.85rem;margin:8px 0">' .
-            esc_html__('Use arrow keys or WASD to move; W, Up or Space to jump twice. Touch controls are included in the 2D platformer.', 'onegodian-games') .
+            esc_html__('ONEGODIA controls: Arrow keys or A/D to move, W/Up/Space to jump and double-jump, P/Esc to pause, and R to restart. Touch controls are available.', 'onegodian-games') .
             '</p></section>';
     }
 

@@ -1,4 +1,4 @@
-# OneGodian Games™ — Architecture v0.1.0
+# OneGodian Games™ — Architecture v0.2.0
 
 ## Product boundaries
 
@@ -28,7 +28,7 @@ The existing WordPress entrypoint uses strict allowlisted local paths. It never 
 
 Use deterministic state transitions, input abstraction for arrow/WASD/touch, double-jump control, moving-platform displacement, collision checks, death/respawn, visible score state and a level completion condition. Use game-only numerical points. An accessible game description, focusable controls and an alternative instruction paragraph must be visible outside the canvas. Mobile touch targets should be comfortably tappable.
 
-The included proof game uses three fixed levels and an animation loop with clamped frame delta; it does not save progress or send telemetry. Source smoke tests exercise jump/double-jump, pickups, hazards, checkpoint, moving platforms, goal, level select and reset.
+The included game is branded **ONEGODIA: Rise of Civilization — 2D Platformer** (v0.2.0). Its stable `rise-of-civilization` ID preserves WordPress shortcodes. A timer, distance progress, pause/resume and session-only medals are display state, not financial assets or persistent account achievements. The included proof game uses three fixed levels and an animation loop with clamped frame delta; it does not save progress or send telemetry. Source smoke tests exercise jump/double-jump, pickups, hazards, checkpoint, moving platforms, goal, level select and reset.
 
 ## 3D game runtime standards (future)
 

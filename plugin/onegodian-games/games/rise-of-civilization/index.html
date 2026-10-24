@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090e1d">
-  <title>OneGodian: Rise of Civilization — 2D Platformer</title>
+  <title>ONEGODIA: Rise of Civilization — 2D Platformer</title>
   <style>
     :root { color-scheme: dark; font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
     * { box-sizing: border-box; }
@@ -29,29 +29,39 @@
     .help { font-size: .78rem; color: #b3bfd4; padding: 0 12px 14px; margin: 0; }
     @media (max-width: 520px) { .hud { gap: 7px; padding: 9px; } .brand { flex-basis: 100%; } .control { min-width: 64px; } .help { line-height: 1.45; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+    .brand-tag { color:#9ee9f9;font-size:.68em;letter-spacing:.08em;margin-left:6px }
+    .timer { font:600 .85rem ui-monospace,monospace;color:#a3f2f7;padding:6px 9px;border:1px solid #356177;border-radius:7px }
+    .progress-track {height:7px;background:#172844;overflow:hidden;position:relative}
+    .progress-fill {height:100%;width:0%;background:linear-gradient(90deg,#43b8cc,#ddbd77);transition:width .16s ease-out}
+    #pause {min-width:75px}
+    @media (max-width:520px){.brand-tag{display:block;margin-left:0;margin-top:3px}.hud select{max-width:145px}}
+    @media (prefers-reduced-motion: reduce){.progress-fill{transition:none}}
   </style>
 </head>
 <body>
 <main class="game" id="onegodian-game">
   <header class="hud">
-    <span class="brand">✦ ONEGODIAN GAMES</span>
+    <span class="brand">✦ ONEGODIA <span class="brand-tag">RISE OF CIVILIZATION</span></span>
     <span id="status" class="status" aria-live="polite">Coins 0/8 · Lives 3</span>
+    <span id="timer" class="timer" aria-label="Elapsed time">00:00</span>
     <label for="level" class="sr-only">District</label>
     <select id="level" aria-label="Select district">
       <option value="0">1 · Awakening</option>
       <option value="1">2 · Sky Gardens</option>
       <option value="2">3 · Citadel</option>
     </select>
+    <button type="button" id="pause" aria-label="Pause or resume the game">Pause</button>
     <button type="button" id="restart">Restart</button>
   </header>
   <div class="scene">
-    <canvas id="stage" width="900" height="480" role="img" aria-label="Side-scrolling OneGodian platform game. Collect gold energy coins, avoid red spikes, activate a blue checkpoint, and reach the gold flag."></canvas>
+    <canvas id="stage" width="900" height="480" role="img" aria-label="ONEGODIA 2D side-scrolling platformer. Collect gold energy coins, avoid red spikes, activate blue checkpoints, and reach the gold goal flag."></canvas>
     <div id="overlay" class="overlay" role="status">
-      <h1 id="heading">Rise of Civilization</h1>
+      <h1 id="heading">ONEGODIA: Rise of Civilization</h1>
       <p id="message">Collect energy coins, activate the checkpoint, and reach the goal flag.</p>
       <button type="button" id="start">Start Game</button>
     </div>
   </div>
+  <div class="progress-track" role="progressbar" aria-label="Distance to goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track"><div class="progress-fill" id="progress"></div></div>
   <div class="controls" aria-label="Touch game controls">
     <div class="control-group">
       <button type="button" class="control" data-key="left" aria-label="Move left">◀</button>
@@ -59,12 +69,14 @@
     </div>
     <button type="button" class="control" data-key="jump" aria-label="Jump or double jump">↑ Jump</button>
   </div>
-  <p class="help">Move: ← → or A/D · Jump: ↑, W or Space (press again to double-jump) · R: restart. Touch controls work on phones.</p>
+  <p class="help">Move: ← → or A/D · Jump: ↑, W or Space (press again to double-jump) · P or Esc: pause · R: restart. Touch controls work on phones.</p>
 </main>
 <script>
 (() => {
   'use strict';
   const GAME_ID = 'rise-of-civilization';
+  const GAME_TITLE = 'ONEGODIA: Rise of Civilization — 2D Platformer';
+  const reducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const root = document.getElementById('onegodian-game');
   const el = id => root.querySelector('#' + id);
   const canvas = el('stage');
@@ -95,17 +107,42 @@
   let levelIndex = 0, level, player, camera = 0, time = 0, lastTime = 0;
   let coins = new Set(), lives = 3, checkpointActive = false, invulnerable = 0;
   let jumpBuffer = 0, coyote = 0, playing = false, mode = 'start';
+  let elapsed = 0, deaths = 0, lastClockSecond = -1, bursts = [];
+  const prettyTime = seconds => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(Math.floor(seconds % 60)).padStart(2, '0');
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
   function updateStatus() {
-    el('status').textContent = 'Coins ' + coins.size + '/' + level.coins.length +
-      ' · Lives ' + lives + (checkpointActive ? ' · ✓ Checkpoint' : '');
+    el('status').textContent = '✦ ' + coins.size + '/' + level.coins.length +
+      ' · ♥ ' + lives + (checkpointActive ? ' · ✓ Checkpoint' : '');
+  }
+  function updateProgress() {
+    const percent = Math.round(clamp(player.x / level.goal * 100, 0, 100));
+    el('progress').style.width = percent + '%';
+    el('progress-track').setAttribute('aria-valuenow', String(percent));
+  }
+  function burst(x, y, color, count = 10) {
+    if (reducedMotion) return;
+    for (let i = 0; i < count; i++) {
+      const angle = i / count * Math.PI * 2;
+      bursts.push({x, y, vx: Math.cos(angle) * 90, vy: Math.sin(angle) * 90 - 35, life: .48, color});
+    }
+    if (bursts.length > 80) bursts = bursts.slice(-80);
+  }
+  function pause() {
+    if (playing) {
+      releaseControls();
+      showOverlay('⏸ Civilization Paused', 'Your progress is safe in this district. Resume to continue your journey.', 'Resume', 'paused');
+    } else if (mode === 'paused') {
+      playing = true; mode = 'playing'; el('overlay').hidden = true;
+    }
+    el('pause').textContent = playing ? 'Pause' : 'Resume';
   }
   function showOverlay(heading, message, button, nextMode) {
     playing = false;
     mode = nextMode;
+    el('pause').textContent = nextMode === 'paused' ? 'Resume' : 'Pause';
     el('heading').textContent = heading;
     el('message').textContent = message;
     el('start').textContent = button;
@@ -115,17 +152,22 @@
     levelIndex = index;
     level = LEVELS[index];
     player = { x: 50, y: FLOOR - 34, w: 25, h: 34, vx: 0, vy: 0, jumps: 0, grounded: false, spawn: 50 };
-    camera = 0; time = 0; lives = 3; coins = new Set(); checkpointActive = false;
+    camera = 0; time = 0; elapsed = 0; deaths = 0; lastClockSecond = -1;
+    lives = 3; coins = new Set(); checkpointActive = false; bursts = [];
+    el('timer').textContent = '00:00';
+    el('pause').textContent = 'Pause';
     invulnerable = 0; jumpBuffer = 0; coyote = 0;
     keys.left = keys.right = keys.jump = false;
     el('level').value = String(index);
     updateStatus();
+    updateProgress();
     if (startImmediately) {
       playing = true; mode = 'playing'; el('overlay').hidden = true;
     } else {
-      showOverlay('District ' + (index + 1) + ': ' + level.name,
-        'Collect the gold coins, avoid red hazards, activate the checkpoint, and reach the flag.',
-        'Play District', 'start');
+      showOverlay(GAME_TITLE,
+        'District ' + (index + 1) + ' · ' + level.name +
+        ' — Collect gold energy coins, jump through the skyline, activate the checkpoint and reach the goal flag.',
+        'Start District', 'start');
     }
   }
   function movingPlatforms(now, before) {
@@ -141,6 +183,8 @@
   }
   function loseLife() {
     lives -= 1;
+    deaths += 1;
+    burst(player.x + player.w / 2, player.y + player.h / 2, '#ff5c86', 18);
     updateStatus();
     if (lives <= 0) {
       showOverlay('Game Over', 'You collected ' + coins.size + ' energy coins. Restart this district to try again.', 'Try Again', 'dead');
@@ -158,6 +202,11 @@
   function update(dt) {
     const previousTime = time;
     time += dt;
+    elapsed += dt;
+    const second = Math.floor(elapsed);
+    if (second !== lastClockSecond) { lastClockSecond = second; el('timer').textContent = prettyTime(elapsed); }
+    for (const b of bursts) { b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 85 * dt; b.life -= dt; }
+    bursts = bursts.filter(b => b.life > 0);
     invulnerable = Math.max(0, invulnerable - dt);
     jumpBuffer = Math.max(0, jumpBuffer - dt);
     const direction = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
@@ -185,6 +234,7 @@
       player.vy = first ? -590 : -545;
       player.jumps = first ? 1 : 2;
       player.grounded = false; coyote = 0; jumpBuffer = 0;
+      burst(player.x + player.w / 2, player.y + player.h, first ? '#81eaff' : '#eac472', first ? 4 : 9);
     }
     if (player.y > HEIGHT + 100) { loseLife(); return; }
     if (invulnerable <= 0) {
@@ -197,6 +247,7 @@
     level.coins.forEach((coin, i) => {
       if (!coins.has(i) && Math.hypot(player.x + 12 - coin[0], player.y + 15 - coin[1]) < 25) {
         coins.add(i);
+        burst(coin[0], coin[1], '#ffe68d', 12);
         updateStatus();
       }
     });
@@ -204,30 +255,68 @@
         player.x < level.checkpoint + 35 && player.y + player.h >= FLOOR - 8) {
       checkpointActive = true;
       player.spawn = level.checkpoint + 20;
+      burst(level.checkpoint + 8, FLOOR - 80, '#6dfce5', 18);
       updateStatus();
     }
     if (player.x + player.w >= level.goal && player.y + player.h > FLOOR - 95) {
-      showOverlay('District Complete!', 'You collected ' + coins.size + '/' + level.coins.length + ' coins.',
+      const medal = coins.size === level.coins.length ? 'GOLD' : coins.size >= 5 ? 'SILVER' : 'BRONZE';
+      showOverlay('✦ ' + level.name + ' Complete', medal + ' DISTRICT MEDAL · ' +
+        coins.size + '/' + level.coins.length + ' coins · ' + prettyTime(elapsed) +
+        ' · ' + deaths + ' deaths. Medals are session-only.',
         levelIndex === LEVELS.length - 1 ? 'Play Again' : 'Next District', 'won');
     }
+    updateProgress();
     camera += (clamp(player.x - 290, 0, level.width - WIDTH) - camera) * Math.min(1, dt * 7);
   }
   function drawBackground() {
+    const palettes = [
+      ['#090e29','#263a6b','#825172'],
+      ['#061c35','#145978','#4b598b'],
+      ['#100c2f','#4e2975','#98604c']
+    ];
+    const colors = palettes[levelIndex];
     const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    gradient.addColorStop(0, '#0b1a39'); gradient.addColorStop(0.62, '#29436c'); gradient.addColorStop(1, '#6c4251');
+    colors.forEach((color,i) => gradient.addColorStop(i / 2,color));
     ctx.fillStyle = gradient; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    ctx.fillStyle = '#f5b76e'; ctx.beginPath(); ctx.arc(750, 105, 43, 0, Math.PI * 2); ctx.fill();
-    ctx.save(); ctx.translate(-camera * 0.2, 0);
-    for (let i = 0; i < 32; i++) {
-      const x = i * 105, height = 65 + (i * 41) % 125;
-      ctx.fillStyle = i % 2 ? '#122844' : '#18334d';
-      ctx.fillRect(x, FLOOR - height, 78, height);
-      ctx.fillStyle = '#f9d78d66';
-      for (let a = 0; a < 3; a++) for (let b = 0; b < 5; b++) {
-        if ((a + b + i) % 3 !== 0) ctx.fillRect(x + 12 + a * 21, FLOOR - height + 14 + b * 22, 7, 9);
+    const orbX = 745 - camera * .025;
+    ctx.fillStyle = levelIndex === 1 ? '#b3edff' : '#f9c474';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(orbX, 92, 40, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.save(); ctx.translate(-camera * .13, 0);
+    // Monumental OneGodian civilization tower: a human-shaped skyline landmark.
+    const tx = 480 + levelIndex * 105, ty = 148;
+    ctx.fillStyle = '#152642';
+    ctx.beginPath(); ctx.arc(tx, ty, 39, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(tx - 19, ty + 42, 38, 108);
+    ctx.fillRect(tx - 82, ty + 60, 64, 22);
+    ctx.fillRect(tx + 18, ty + 60, 64, 22);
+    ctx.fillRect(tx - 21, ty + 142, 18, 115);
+    ctx.fillRect(tx + 3, ty + 142, 18, 115);
+    ctx.strokeStyle = '#c7a36f'; ctx.lineWidth = 2; ctx.strokeRect(tx - 15, ty + 60, 30, 71);
+    ctx.fillStyle = '#d3bb7770';
+    for (let i=0; i<6; i++) ctx.fillRect(tx - 11, ty + 69 + i*10, 22, 3);
+    ctx.restore();
+
+    ctx.save(); ctx.translate(-camera * .22, 0);
+    for (let i = 0; i < 34; i++) {
+      const x = i * 100, height = 58 + (i * 41) % 150;
+      ctx.fillStyle = i % 2 ? '#122844' : '#1a3552';
+      ctx.fillRect(x, FLOOR - height, 74, height);
+      ctx.fillStyle = '#f9d78d55';
+      for (let a = 0; a < 3; a++) for (let b = 0; b < 6; b++) {
+        if ((a + b + i) % 3 !== 0) ctx.fillRect(x + 11 + a * 21, FLOOR - height + 12 + b * 20, 7, 9);
       }
     }
     ctx.restore();
+
+    ctx.fillStyle = '#dac28a33';
+    for (let i = 0; i < 18; i++) {
+      const x = (i * 139 - camera * .08 + WIDTH * 5) % WIDTH;
+      const y = 35 + (i * 47) % 200;
+      ctx.fillRect(x, y, 2, 2);
+    }
   }
   function draw() {
     drawBackground();
@@ -266,6 +355,12 @@
       ctx.fillRect(player.x + 15, player.y + 29, 8, 5);
       ctx.fillStyle = '#1b2839'; ctx.fillRect(player.x + (player.vx >= 0 ? 15 : 7), player.y + 5, 3, 3);
     }
+    for (const b of bursts) {
+      ctx.globalAlpha = Math.max(0, b.life / .48);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x - 2.5, b.y - 2.5, 5, 5);
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
     ctx.fillStyle = '#f6e2b5'; ctx.font = '14px system-ui'; ctx.fillText(level.name.toUpperCase(), 16, 25);
   }
@@ -276,6 +371,9 @@
     } else keys[action] = down;
   }
   window.addEventListener('keydown', event => {
+    if ((event.code === 'KeyP' || event.code === 'Escape') && (playing || mode === 'paused')) {
+      event.preventDefault(); if (!event.repeat) pause(); return;
+    }
     const action = keyMap[event.code];
     if (action) { event.preventDefault(); if (playing) setKey(action, true); }
     if (event.code === 'KeyR') { event.preventDefault(); loadLevel(levelIndex, true); }
@@ -287,8 +385,8 @@
   function releaseControls() {
     keys.left = false; keys.right = false; keys.jump = false; jumpBuffer = 0;
   }
-  window.addEventListener('blur', releaseControls);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseControls(); });
+  window.addEventListener('blur', () => { if (playing) pause(); else releaseControls(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && playing) pause(); });
   root.querySelectorAll('[data-key]').forEach(button => {
     const action = button.dataset.key;
     button.addEventListener('pointerdown', event => {
@@ -301,10 +399,12 @@
       button.addEventListener(type, () => setKey(action, false)));
   });
   el('restart').addEventListener('click', () => loadLevel(levelIndex, true));
+  el('pause').addEventListener('click', pause);
   el('level').addEventListener('change', event => loadLevel(Number(event.target.value)));
   el('start').addEventListener('click', () => {
     if (mode === 'won') { loadLevel(levelIndex === LEVELS.length - 1 ? 0 : levelIndex + 1, true); return; }
     if (mode === 'dead') { loadLevel(levelIndex, true); return; }
+    if (mode === 'paused') { pause(); return; }
     playing = true; mode = 'playing'; el('overlay').hidden = true;
   });
   function frame(timestamp) {
