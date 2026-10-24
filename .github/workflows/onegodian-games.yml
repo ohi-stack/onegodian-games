@@ -1,0 +1,56 @@
+name: OneGodian Games Plugin CI
+
+on:
+  pull_request:
+    paths:
+      - "plugin/onegodian-games/**"
+      - "scripts/verify-catalog.mjs"
+      - ".github/workflows/onegodian-games.yml"
+  push:
+    paths:
+      - "plugin/onegodian-games/**"
+      - "scripts/verify-catalog.mjs"
+      - ".github/workflows/onegodian-games.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  plugin-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+      - name: PHP syntax
+        run: php -l plugin/onegodian-games/onegodian-games.php
+      - name: WordPress shortcode and catalog smoke checks
+        run: php plugin/onegodian-games/tests/verify-plugin.php
+      - name: Platformer gameplay mechanics
+        run: node plugin/onegodian-games/tests/verify-platformer.mjs
+      - name: Validate 2D/3D catalog contract
+        run: node scripts/verify-catalog.mjs
+      - name: Build plugin ZIP
+        run: |
+          cd plugin
+          zip -r ../onegodian-games.zip onegodian-games -x 'onegodian-games/tests/*' 'onegodian-games/README.md'
+          cd ..
+          unzip -l onegodian-games.zip
+          unzip -Z1 onegodian-games.zip | grep -Fxq 'onegodian-games/onegodian-games.php'
+          unzip -Z1 onegodian-games.zip | grep -Fxq 'onegodian-games/games/catalog.json'
+          unzip -Z1 onegodian-games.zip | grep -Fxq 'onegodian-games/games/rise-of-civilization/index.html'
+      - name: Upload candidate plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: onegodian-games-plugin-candidate
+          path: onegodian-games.zip
+          if-no-files-found: error
