@@ -12,6 +12,10 @@ assert.equal(catalog.authority, 'ohi-stack/onegodian-games');
 assert.ok(Array.isArray(catalog.games));
 assert.ok(catalog.games.length >= 2);
 const ids = new Set();
+const valueGame = catalog.games.find(game => game.id === 'onegodian-value-control-the-flow');
+assert.ok(valueGame, 'OneGodian Value must be listed in the catalog');
+assert.equal(valueGame.status, 'planned', 'the source is unavailable and must not be launchable');
+assert.equal(valueGame.entry, null, 'unavailable prototype has no local entry');
 let playable2d = 0;
 let planned3d = 0;
 for (const game of catalog.games) {
@@ -37,7 +41,7 @@ assert.equal(platformer.version, '0.2.0');
 for (const feature of ['run', 'jump', 'double-jump', 'pause-resume', 'elapsed-timer', 'distance-progress', 'session-medals']) {
   assert.ok(platformer.features.includes(feature), 'upgraded feature is described: ' + feature);
 }
-assert.equal(planned3d, 1, 'one clearly planned 3D game');
+assert.equal(planned3d, 2, 'two clearly planned 3D games');
 for (const token of ['onegodian_games_catalog', 'onegodian_games', 'onegodian_game', "['2d', '3d']", 'is_file', 'allow-scripts']) {
   assert.ok(plugin.includes(token), 'plugin must implement registry control: ' + token);
 }

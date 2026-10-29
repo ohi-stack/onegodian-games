@@ -35,6 +35,16 @@
       "release_status": "source-playable; WordPress staging unverified"
     },
     {
+      "id": "onegodian-value-control-the-flow",
+      "title": "OneGodian Value: Control the Flow",
+      "type": "3d",
+      "category": "strategy",
+      "status": "planned",
+      "entry": null,
+      "description": "A proposed city strategy game about trust, security, access and economic activity. The Google AI Studio prototype has not been imported; all game credits and transactions are fictional.",
+      "release_status": "prototype source unavailable; not playable in this repository"
+    },
+    {
       "id": "onegodian-3d-exploration",
       "title": "OneGodian 3D Exploration",
       "type": "3d",
