@@ -4,13 +4,17 @@ on:
   pull_request:
     paths:
       - "plugin/onegodian-games/**"
-      - "scripts/verify-*.mjs"
+      - "scripts/**"
+      - "games-source/cpp/**"
+      - "docs/CPP-WASM-BUILD.md"
       - "docs/GAME-IMPORT-ARCHITECTURE.md"
       - ".github/workflows/onegodian-games.yml"
   push:
     paths:
       - "plugin/onegodian-games/**"
-      - "scripts/verify-*.mjs"
+      - "scripts/**"
+      - "games-source/cpp/**"
+      - "docs/CPP-WASM-BUILD.md"
       - "docs/GAME-IMPORT-ARCHITECTURE.md"
       - ".github/workflows/onegodian-games.yml"
 
@@ -20,7 +24,7 @@ permissions:
 jobs:
   plugin-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +47,21 @@ jobs:
         run: node scripts/verify-catalog.mjs
       - name: Validate multi-game import contract
         run: node scripts/verify-game-import.mjs
+      - name: Prepare Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.74'
+          actions-cache-folder: 'emsdk-cache'
+      - name: Build C++ WASM template
+        run: bash scripts/build-cpp-games.sh
+      - name: Verify WordPress WASM shortcode packaging
+        run: php plugin/onegodian-games/tests/verify-wasm-wordpress.php
+      - name: Install browser smoke-test tooling
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate WASM in sandboxed Chromium
+        run: node scripts/verify-wasm-browser.mjs
       - name: Build plugin ZIP
         run: |
           cd plugin
