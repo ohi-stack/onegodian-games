@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OneGodian C++ Demo</title><style>html,body{margin:0;background:#071121;color:#f5f1e8;font-family:system-ui,sans-serif}main{max-width:900px;margin:auto;padding:1rem}canvas{display:block;width:100%;max-width:800px;height:auto;border:1px solid #d8b35a}</style></head><body><main><h1>OneGodian C++ / WebAssembly</h1><p>Demonstration only. No saved progress.</p><canvas id="game" width="800" height="450" aria-label="Animated gold circle"></canvas><p id="status" role="status">Loading...</p></main><script>
+var Module = {canvas:document.getElementById('game'),setStatus:function(s){document.getElementById('status').textContent=s||'Game running';},onRuntimeInitialized:function(){document.getElementById('status').textContent='Game running';document.documentElement.dataset.wasmReady='true';},onAbort:function(){document.getElementById('status').textContent='Game failed to load';}};
+</script>
+{{{ SCRIPT }}}
+</body></html>
