@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "plugin/onegodian-games/**"
-      - "scripts/verify-catalog.mjs"
+      - "scripts/verify-*.mjs"
+      - "docs/GAME-IMPORT-ARCHITECTURE.md"
       - ".github/workflows/onegodian-games.yml"
   push:
     paths:
       - "plugin/onegodian-games/**"
-      - "scripts/verify-catalog.mjs"
+      - "scripts/verify-*.mjs"
+      - "docs/GAME-IMPORT-ARCHITECTURE.md"
       - ".github/workflows/onegodian-games.yml"
 
 permissions:
@@ -39,6 +41,8 @@ jobs:
         run: node plugin/onegodian-games/tests/verify-platformer.mjs
       - name: Validate 2D/3D catalog contract
         run: node scripts/verify-catalog.mjs
+      - name: Validate multi-game import contract
+        run: node scripts/verify-game-import.mjs
       - name: Build plugin ZIP
         run: |
           cd plugin
