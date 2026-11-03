@@ -16,6 +16,9 @@ const server = createServer((req,res) => {
   const file = path.replace('/games/','');
   if (!['index.html','index.js','index.wasm'].includes(file) || !path.startsWith('/games/')) { res.writeHead(404); res.end(); return; }
   res.setHeader('Content-Type',contentTypes[extname(file)]);
+  // A sandboxed iframe has an opaque origin, including for its own static WASM fetch.
+  // Public non-credentialed game assets must permit that origin to read the binary.
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.end(readFileSync(resolve(base,file)));
 });
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
@@ -24,10 +27,16 @@ const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
 try {
   const page = await browser.newPage();
   const failures = [];
-  page.on('pageerror', err=>failures.push(err.message));
+  page.on('pageerror', err=>failures.push('pageerror: ' + err.message));
+  page.on('console', msg=>{ if(msg.type()==='error') failures.push('console: ' + msg.text()); });
+  page.on('requestfailed', request=>failures.push('request: ' + request.url() + ' - ' + request.failure()?.errorText));
   await page.goto(address);
   const frame = page.frameLocator('iframe[title="OneGodian C++ Demo"]');
-  await frame.locator('html[data-wasm-ready="true"]').waitFor({timeout:20000});
+  try {
+    await frame.locator('html[data-wasm-ready="true"]').waitFor({state:'attached',timeout:20000});
+  } catch (error) {
+    throw new Error('WASM runtime did not initialize; browser diagnostics: ' + JSON.stringify(failures) + '; status: ' + await frame.locator('#status').textContent().catch(()=>'<unavailable>'), {cause:error});
+  }
   assert.equal(await frame.locator('#status').textContent(), 'Game running');
   assert.deepEqual(failures, []);
   assert.equal(await page.locator('iframe').getAttribute('sandbox'),'allow-scripts');
