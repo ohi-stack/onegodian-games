@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OneGodian Games
  * Description: OneGodian 2D and 3D browser-game catalog, including the ONEGODIA 2D platformer.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Requires at least: 6.3
  * Requires PHP: 8.2
  * Author: ONEGODIAN, LLC
@@ -99,6 +99,12 @@ final class OneGodian_Games {
         }
         $src = plugins_url((string) $game['entry'], __FILE__);
         $type = (string) $game['type'];
+        $controls = sanitize_text_field((string) ($game['controls'] ?? ''));
+        if ($controls === '' && $id === self::DEFAULT_GAME) {
+            $controls = __('ONEGODIA controls: Arrow keys or A/D to move, W/Up/Space to jump and double-jump, P/Esc to pause, and R to restart. Touch controls are available.', 'onegodian-games');
+        }
+        $height = isset($game['minimum_height']) ? (int) $game['minimum_height'] : 650;
+        $height = max(320, min(1000, $height));
 
         return '<section class="onegodian-games-embed" aria-label="' .
             esc_attr($title) .
@@ -110,11 +116,10 @@ final class OneGodian_Games {
             '" src="' . esc_url($src) .
             '" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts" ' .
             'data-onegodian-game-type="' . esc_attr($type) . '" ' .
-            'style="display:block;width:100%;height:650px;border:1px solid #b9954c;border-radius:14px;background:#090e1d" ' .
+            'style="display:block;width:100%;height:' . esc_attr((string) $height) . 'px;border:1px solid #b9954c;border-radius:14px;background:#090e1d" ' .
             'allowfullscreen></iframe>' .
-            '<p style="font-size:.85rem;margin:8px 0">' .
-            esc_html__('ONEGODIA controls: Arrow keys or A/D to move, W/Up/Space to jump and double-jump, P/Esc to pause, and R to restart. Touch controls are available.', 'onegodian-games') .
-            '</p></section>';
+            ($controls !== '' ? '<p style="font-size:.85rem;margin:8px 0">' . esc_html($controls) . '</p>' : '') .
+            '</section>';
     }
 
     /**
